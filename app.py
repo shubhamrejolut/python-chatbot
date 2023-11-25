@@ -1,21 +1,16 @@
-from flask import Flask
 import os
+from flask import Flask 
+import pinecone
 from langchain.chat_models import ChatOpenAI
 from pathlib import Path
-from langchain.document_loaders import PyPDFLoader
-from langchain.document_loaders import OnlinePDFLoader
-from langchain.document_loaders import PyPDFDirectoryLoader
+from langchain.document_loaders import PyPDFLoader, OnlinePDFLoader, PyPDFDirectoryLoader
 from langchain.text_splitter import CharacterTextSplitter, RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
-from langchain.chains import ConversationalRetrievalChain
-from langchain.chains import RetrievalQA
-from langchain.agents import Tool
+from langchain.vectorstores import Chroma, Pinecone, FAISS
+from langchain.chains import ConversationalRetrievalChain, RetrievalQA
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-from langchain.agents import initialize_agent, AgentType
+from langchain.agents import initialize_agent, AgentType,Tool
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.storage import InMemoryStore
 from langchain.llms import HuggingFaceHub
@@ -100,6 +95,30 @@ def home():
             print(result)
             return result
         
+        def add_docs_to_pinecone():
+            pages = offline_loader("technology_risk_management.pdf")
+            text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+            docs = text_splitter.split_documents(pages)
+            print(docs, "Docs")
+            embeddings = create_embeddings()
+            print(embeddings, "Embeddings")
+            
+            pinecone.init(api_key=os.getenv('PINECONE_API_KEY'), environment=os.getenv('PINECONE_ENV'))
+            index_name = os.getenv('PINECONE_INDEX_NAME')
+            print (pinecone.list_indexes())
+            if index_name not in pinecone.list_indexes():
+                print (pinecone.list_indexes())
+                pinecone.create_index(name=index_name, metric="cosine", dimension=1536)
+                
+            docsearch = Pinecone.from_documents(docs, embeddings, index_name=index_name)
+            print (docsearch, "DocSearch")
+            # docsearch = Pinecone.from_existing_index("rejx", embeddings)
+            query = "Summary of the documents"
+            result = docsearch.similarity_search(query)
+            print(result[0].page_content)
+            
+            return result[0].page_content
+            
         def query_single_doc(question):
             pages = offline_loader("technology_risk_management.pdf")
             # This text splitter is used to create the child documents
@@ -125,7 +144,8 @@ def home():
             return str(sub_docs[0].page_content)
         
         # response = compare_docs(query)
-        response = query_single_doc(query)
+        # response = query_single_doc(query)
+        response = add_docs_to_pinecone()
         return response
     except Exception as e:
         print("Error",e)
