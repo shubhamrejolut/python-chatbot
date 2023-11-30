@@ -1,5 +1,6 @@
 import os
-from flask import Flask
+from flask import Flask, request
+from flask_cors import CORS
 import pinecone
 from langchain.chat_models import ChatOpenAI
 from pathlib import Path
@@ -29,7 +30,7 @@ from langchain.agents.agent_toolkits import (
 )
 
 app = Flask(__name__)
-
+cors = CORS(app)
 # export OPENAI_API_KEY="..."
 load_dotenv()
 
@@ -132,11 +133,12 @@ def add_documents():
 @app.route("/")
 def home():
     try:
+        print(request.args.get("input"))
 
         class DocumentInput(BaseModel):
             question: str = Field()
 
-        query = "Compare cats and dogs in detail"
+        query = request.args.get("input")
         chat = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
         repo_id = "google/flan-t5-xxl"
         # llm = HuggingFaceHub(
@@ -240,3 +242,7 @@ def home():
     except Exception as e:
         print("Error", e)
         return str(e)
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
