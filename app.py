@@ -133,7 +133,6 @@ def add_documents():
 @app.route("/")
 def home():
     try:
-        print(request.args.get("input"))
 
         class DocumentInput(BaseModel):
             question: str = Field()
