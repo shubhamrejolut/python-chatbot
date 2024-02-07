@@ -1,6 +1,4 @@
 import os
-from flask import Flask, request
-from flask_cors import CORS
 from langchain.chat_models import ChatOpenAI
 from pathlib import Path
 import pinecone
@@ -9,6 +7,7 @@ from langchain.document_loaders import (
     OnlinePDFLoader,
     PyPDFDirectoryLoader,
 )
+import streamlit as st
 from langchain.text_splitter import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
@@ -29,48 +28,45 @@ from langchain.agents.agent_toolkits import (
     create_vectorstore_router_agent,
 )
 
-app = Flask(__name__)
-cors = CORS(app)
 # export OPENAI_API_KEY="..."
 load_dotenv()
 
 
-@app.route("/add-docs")
 def add_documents():
     try:
         llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.6)
 
         files = [
-            # {
-            #     "name": "cats",
-            #     "path": "cats.pdf",
-            #     "description": "use this document to answer questions about  cats",
-            # },
-            # {
-            #     "name": "dogs",
-            #     "path": "dogs.pdf",
-            #     "description": "use this document to answer questions about  dogs",
-            # },
-            # {
-            #     "name": "MAS",
-            #     "path": "MAS.pdf",
-            #     "description": "use this document to answer questions about technology risk guidelines",
-            # },
-            # {
-            #     "name": "SAMA",
-            #     "path": "SAMA.pdf",
-            #     "description": "use this document to answer questions about  saudi arabia monetary authority",
-            # },
-            # {
-            #     "name": "payment",
-            #     "path": "payment_security_standards.pdf",
-            #     "description": "use this document to answer questions about  payments",
-            # },
-            # {
-            #     "name": "central_bank_of_kuwait",
-            #     "path": "central_bank_of_kuwait.pdf",
-            #     "description": "use this document to answer questions about  central_bank_of_kuwait",
-            # },
+            {
+                "name": "cats",
+                "path": "cats.pdf",
+                "description": "use this document to answer questions about  cats",
+            },
+            {
+                "name": "dogs",
+                "path": "dogs.pdf",
+                "description": "use this document to answer questions about  dogs",
+            },
+            {
+                "name": "MAS",
+                "path": "MAS.pdf",
+                "description": "use this document to answer questions about technology risk guidelines",
+            },
+            {
+                "name": "SAMA",
+                "path": "SAMA.pdf",
+                "description": "use this document to answer questions about  saudi arabia monetary authority",
+            },
+            {
+                "name": "payment",
+                "path": "payment_security_standards.pdf",
+                "description": "use this document to answer questions about  payments",
+            },
+            {
+                "name": "central_bank_of_kuwait",
+                "path": "central_bank_of_kuwait.pdf",
+                "description": "use this document to answer questions about  central_bank_of_kuwait",
+            },
         ]
 
         def directory_loader():
@@ -130,14 +126,12 @@ def add_documents():
         raise e
 
 
-@app.route("/")
-def home():
+def home(query):
     try:
 
         class DocumentInput(BaseModel):
             question: str = Field()
 
-        query = request.args.get("input")
         chat = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
         repo_id = "google/flan-t5-xxl"
         # llm = HuggingFaceHub(
@@ -242,6 +236,15 @@ def home():
         print("Error", e)
         return str(e)
 
+def main():
+    st.title('Compare documents')
+    query = st.text_input("Ask to comapre documents")
+
+    if st.button("Add Docs"):
+        add_documents()
+    if query:
+        query_result = home(query)
+        st.write(query_result)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
+    main()
