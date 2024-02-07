@@ -1,9 +1,9 @@
 import os
 from flask import Flask, request
 from flask_cors import CORS
-import pinecone
 from langchain.chat_models import ChatOpenAI
 from pathlib import Path
+import pinecone
 from langchain.document_loaders import (
     PyPDFLoader,
     OnlinePDFLoader,
@@ -17,7 +17,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma, Pinecone, FAISS
 from langchain.chains import ConversationalRetrievalChain, RetrievalQA
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 from langchain.agents import initialize_agent, AgentType, Tool
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.storage import InMemoryStore
